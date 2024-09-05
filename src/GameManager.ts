@@ -27,7 +27,6 @@ export class GameManager {
                 turn:'white'
             };
 
-            console.log(chess.board())
             gameInstance.player1.send(JSON.stringify({type:"start",turn:'white',yourIdentity:'white',orientation:'white',fen:chess.fen()}))
             gameInstance.player2.send(JSON.stringify({type:"start",turn:'white',yourIdentity:'black',orientation:'black',fen:chess.fen()}))
 
@@ -75,8 +74,8 @@ export class GameManager {
                     game.player2.send(JSON.stringify({ type: "move", move: result }));
                 }else{
                     game.player1.send(JSON.stringify({ type: "move", move: result }));
-                } 
-    
+                }
+
                 // Check if the game is over
                 if (game.chess.isGameOver()) {
                     const status = game.chess.isCheckmate() ? 'Checkmate' : 'Stalemate';
@@ -85,8 +84,8 @@ export class GameManager {
                 } else {
                     // Update turn
                     game.turn = game.turn === 'white' ? 'black' : 'white';
-                    game.player1.send(JSON.stringify({ type: "turn", turn: game.turn }));
-                    game.player2.send(JSON.stringify({ type: "turn", turn: game.turn }));
+                    game.player1.send(JSON.stringify({ type: "turn", turn: game.turn ,history:game.chess.history() }));
+                    game.player2.send(JSON.stringify({ type: "turn", turn: game.turn ,history:game.chess.history() }));
                 }
             } else {
                 // Move was invalid
