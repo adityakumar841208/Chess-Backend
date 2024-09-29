@@ -1,5 +1,11 @@
 import WebSocket from 'ws'
-import {Chess} from 'chess.js'
+import { Chess } from 'chess.js'
+
+// to do
+// when it's is a rematch then the move isn't working i have to fix that.There is some problem in the turn function.
+// the layout isn't good in the tab fix it.
+
+
 
 interface Game {
     player1: WebSocket; // this will be white
@@ -9,6 +15,7 @@ interface Game {
     chess: Chess;
     turn: string;
 }
+
 
 export class GameManager {
 
@@ -22,19 +29,19 @@ export class GameManager {
                 player1: this.pendingUser,
                 player2: ws,
                 board: chess.board().flat().map(square => square ? square.type : 'empty'),//representation of empty board 
-                chess:chess,
+                chess: chess,
                 state: [],
-                turn:'white'
+                turn: 'white'
             };
 
-            gameInstance.player1.send(JSON.stringify({type:"start",turn:'white',yourIdentity:'white',orientation:'white',fen:chess.fen()}))
-            gameInstance.player2.send(JSON.stringify({type:"start",turn:'white',yourIdentity:'black',orientation:'black',fen:chess.fen()}))
+            gameInstance.player1.send(JSON.stringify({ type: "start", turn: 'white', yourIdentity: 'white', orientation: 'white', fen: chess.fen() }))
+            gameInstance.player2.send(JSON.stringify({ type: "start", turn: 'white', yourIdentity: 'black', orientation: 'black', fen: chess.fen() }))
 
             this.games.push(gameInstance);
             this.pendingUser = null;
         } else {
             this.pendingUser = ws;
-            ws.send(JSON.stringify({type:"pendingUser"}))
+            ws.send(JSON.stringify({ type: "pendingUser" }))
         }
     }
 
@@ -60,19 +67,25 @@ export class GameManager {
         if (!game) {
             return;
         }
-    
+
         if (data.type === 'move') {
-            const move = data.move; // Expecting move in UCI format like 'e2e4'
-            const result = game.chess.move(move);
+            const { from, to, promotion } = data.move; // Extract move details including promotion
+
+            // Apply the move with promotion if specified
+            const result = game.chess.move({
+                from,
+                to,
+                promotion // Include promotion piece if provided
+            });
 
             if (result) {
-                // Move was successful, update the board
+                // Move was successful, update the board state
                 game.board = game.chess.board().flat().map(square => square ? square.type : 'empty');
 
-                //this event will be sent to the opponent only
-                if(game.player1 === ws){
+                // Notify both players of the move
+                if (game.player1 === ws) {
                     game.player2.send(JSON.stringify({ type: "move", move: result }));
-                }else{
+                } else {
                     game.player1.send(JSON.stringify({ type: "move", move: result }));
                 }
 
@@ -82,15 +95,48 @@ export class GameManager {
                     game.player1.send(JSON.stringify({ type: "gameOver", status }));
                     game.player2.send(JSON.stringify({ type: "gameOver", status }));
                 } else {
-                    // Update turn
+                    // Update turn and history
                     game.turn = game.turn === 'white' ? 'black' : 'white';
-                    game.player1.send(JSON.stringify({ type: "turn", turn: game.turn ,history:game.chess.history() }));
-                    game.player2.send(JSON.stringify({ type: "turn", turn: game.turn ,history:game.chess.history() }));
+                    const history = game.chess.history();
+                    game.player1.send(JSON.stringify({ type: "turn", turn: game.turn, history }));
+                    game.player2.send(JSON.stringify({ type: "turn", turn: game.turn, history }));
                 }
             } else {
                 // Move was invalid
-               ws.send(JSON.stringify({ type: "error", message: "Invalid move" }));
+                ws.send(JSON.stringify({ type: "error", message: "Invalid move" }));
             }
+        }
+
+
+        // i have to fix this 
+        if (data.type === 'playAgain') {
+            // console.log("here in the backend the data recieved succesfully", data.type);
+            if (game.player1 === ws) {
+                game.player2.send(JSON.stringify({ type: "playAgain" }));
+            } else {
+                game.player1.send(JSON.stringify({ type: "playAgain" }));
+            }
+        }
+
+        //resetting the chessboard
+        if (data.type === 'resetState') {
+            // console.log("Resetting the game state");
+
+            game.chess.reset();
+            game.turn = 'white';
+            const newFen = game.chess.fen();
+
+            game.player1.send(JSON.stringify({
+                type: "resetState",
+                fen: newFen,
+                turn: game.turn
+            }));
+
+            game.player2.send(JSON.stringify({
+                type: "resetState",
+                fen: newFen,
+                turn: game.turn
+            }));
         }
     }
 }
