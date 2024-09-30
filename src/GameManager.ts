@@ -1,10 +1,6 @@
 import WebSocket from 'ws'
 import { Chess } from 'chess.js'
 
-// to do
-// when it's is a rematch then the move isn't working i have to fix that.There is some problem in the turn function.
-// the layout isn't good in the tab fix it.
-
 
 
 interface Game {

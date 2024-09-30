@@ -1,7 +1,14 @@
 import WebSocket, { WebSocketServer } from 'ws';
 import {GameManager} from "./GameManager"
+import dotenv from 'dotenv';
 
-const PORT = 8080;
+dotenv.config();
+
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 8080;
+
+if (isNaN(PORT)) {
+  throw new Error('Invalid or undefined PORT value.');
+}
 
 const game = new GameManager()
 
