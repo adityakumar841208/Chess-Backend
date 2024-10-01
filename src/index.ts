@@ -16,9 +16,14 @@ const wss = new WebSocketServer({ port: PORT });
 
 wss.on('connection', (ws: WebSocket) => {
   console.log('New client connected');
+<<<<<<< HEAD
 
   ws.send(JSON.stringify({type:"welcome"}));
 
+=======
+  ws.send(JSON.stringify({type:"welcome"}));
+  
+>>>>>>> 6a5fd8421fd95267382b38725c958a9d31444e83
   game.addUser(ws)
 
   ws.on('message', (message: string) => {
