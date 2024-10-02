@@ -15,9 +15,7 @@ const game = new GameManager()
 const wss = new WebSocketServer({ port: PORT });
 
 wss.on('connection', (ws: WebSocket) => {
-  console.log('New client connected');
-
-  ws.send(JSON.stringify({type:"welcome"}));
+  console.log('New client connected')
 
   game.addUser(ws)
 
